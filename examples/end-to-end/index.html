@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<head>
+<title>ServiceWorker registration end-to-end</title>
+<style> iframe { display:none; } </style>
+<iframe src="out-of-scope/registration.html"></iframe>
+<iframe src="in-scope/inscope.html" id="inscope"></iframe>
+<button id="test-offline">Reload while offline to test Script Cache</button>
+<hr/>
+<div id="log"></div>
+
+<script>
+function $(selector) { return document.querySelector(selector); }
+$('#test-offline').onclick = function() {
+  if (navigator.onLine) {
+    $('#log').innerHTML += "ERROR: You're not offline" + '<br/>';
+    return;
+  }
+  $('#inscope').src = "in-scope/inscope-offline.html";
+  $('#inscope').document.reload();
+}
+</script>

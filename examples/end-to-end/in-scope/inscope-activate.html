@@ -1,0 +1,42 @@
+<script src='../util.js'></script>
+<script>
+var lastActiveState = '',
+    receivedMessageFromPort = '',
+    receivedMessage = '';
+
+assert('navigator.serviceWorker');
+assert('navigator.serviceWorker.active');
+assert('navigator.serviceWorker.active.state == "activating"');
+
+if (navigator.serviceWorker.active) {
+  navigator.serviceWorker.active.onstatechange = function() {
+    assert('navigator.serviceWorker.active.state == "active"');
+    lastActiveState = navigator.serviceWorker.active.state;
+
+    sendMessagePortToServiceWorker(
+      navigator.serviceWorker.active,
+      'inscope doc (via active)',
+      function (e) { receivedMessageFromPort = e.data; });
+
+    done();
+  };
+}
+
+window.onmessage = function(e) {
+  var message = e.data;
+  log('Got message from ServiceWorker: ' + message);
+  receivedMessage = e.message;
+}
+
+function onTestFinished() {
+  test_header('Activation finished.');
+  assert('activeChangeCount == 0');
+  assert('activeStateChangeCount == 1');
+  assert('lastActiveState == "active"');
+  assert('pendingChangeCount == 0');
+  assert('pendingStateChangeCount == 0');
+  assert('receivedMessageFromPort == "Ack for: inscope doc (via active)"');
+  assert('receivedMessage == "Ack for: inscope doc (via active)"');
+}
+</script>
+

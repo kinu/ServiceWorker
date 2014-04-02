@@ -1,0 +1,37 @@
+<script src='../util.js'></script>
+<script>
+
+var receivedMessageFromPort = '',
+    receivedMessage = '';
+
+assert('navigator.serviceWorker');
+assert('navigator.serviceWorker.active');
+
+sendMessagePortToServiceWorker(
+  navigator.serviceWorker.active,
+  'inscope doc (offline)',
+  function (e) {
+    receivedMessageFromPort = e.data;
+    if (receivedMessage)
+      done();
+  });
+
+window.onmessage = function(e) {
+  var message = e.data;
+  log('Got message from ServiceWorker: ' + message);
+  receivedMessage = e.message;
+  if (receivedMessageFromPort)
+    done();
+}
+
+function onTestFinished() {
+  test_header('Offlien test finished.');
+  assert('activeChangeCount == 0');
+  assert('activeStateChangeCount == 0');
+  assert('pendingChangeCount == 0');
+  assert('pendingStateChangeCount == 0');
+  assert('receivedMessageFromPort == "Ack for: inscope doc (offline)"');
+  assert('receivedMessage == "Ack for: inscope doc (offline)"');
+}
+
+</script>

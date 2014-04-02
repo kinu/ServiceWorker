@@ -1,0 +1,69 @@
+<script src='../util.js'></script>
+<script>
+var serviceWorker = null,
+    serviceWorkerStateChangeCount = 0,
+    lastServiceWorkerState = '',
+    receivedMessageFromPort = '',
+    receivedMessage = '';
+
+assert('navigator.serviceWorker');
+assert('navigator.serviceWorker.register');
+assert('navigator.serviceWorker.unregister');
+
+// This always test 'fresh' registration-- so unregister it first to make sure.
+navigator.serviceWorker.unregister('/scope/*').then(
+  function() {
+    navigator.serviceWorker.register(
+    'service-worker.js', {scope:'/scope/*'}).then(onRegister, errorHandler);
+  }, errorHandler);
+
+function onRegister(sw) {
+  serviceWorker = sw;
+  test_header('Registration returned ' + serviceWorker);
+  lastServiceWorkerState = 'installing';
+
+  sendMessagePortToServiceWorker(
+    sw, 'registering doc',
+    function (e) {
+      if (e.data == 'ping') sw.postMessage('pong');
+      else receivedMessageFromPort = e.data;
+    });
+
+  assert('serviceWorker.state == "installing"');
+  sw.onstatechange = function() {
+    ++serviceWorkerStateChangeCount;
+    switch (sw.state) {
+      case 'installed':
+        assert('lastServiceWorkerState == "installing"');
+        break;
+      case 'activating':
+        assert('lastServiceWorkerState == "installed"');
+        break;
+      case 'active':
+        assert('lastServiceWorkerState == "activating"');
+        break;
+    }
+    lastServiceWorkerState = sw.state;
+    if (lastServiceWorkerState == 'active')
+      done();
+  };
+}
+
+window.onmessage = function(e) {
+  log('Got message from ServiceWorker :' + e.data);
+  receivedMessage = e.message;
+};
+
+function onTestFinished() {
+  test_header('Registration finished.');
+  assert('serviceWorkerStateChangeCount == 3');
+  assert('lastServiceWorkerState == "active"');
+  assert('receivedMessageFromPort == "Ack for: registering doc"');
+  assert('receivedMessage == "Ack for: registering doc"');
+
+  // This document is out-of-scope, so we should see no pending/active
+  // change events.
+  assert('pendingStateChangeCount == 0');
+  assert('activeStateChangeCount == 0');
+}
+</script>

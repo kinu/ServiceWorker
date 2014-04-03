@@ -13,7 +13,7 @@ assert('navigator.serviceWorker.unregister');
 // TODO(kinuko): unregister before calling register for fresh registration
 // test.
 navigator.serviceWorker.register(
-    'service-worker.js', {scope:'/scope/*'}).then(onRegister, errorHandler);
+    '../service-worker.js', {scope:'/scope/*'}).then(onRegister, errorHandler);
 
 function onRegister(sw) {
   serviceWorker = sw;

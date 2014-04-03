@@ -10,12 +10,10 @@ assert('navigator.serviceWorker');
 assert('navigator.serviceWorker.register');
 assert('navigator.serviceWorker.unregister');
 
-// This always test 'fresh' registration-- so unregister it first to make sure.
-navigator.serviceWorker.unregister('/scope/*').then(
-  function() {
-    navigator.serviceWorker.register(
+// TODO(kinuko): unregister before calling register for fresh registration
+// test.
+navigator.serviceWorker.register(
     'service-worker.js', {scope:'/scope/*'}).then(onRegister, errorHandler);
-  }, errorHandler);
 
 function onRegister(sw) {
   serviceWorker = sw;
@@ -65,5 +63,12 @@ function onTestFinished() {
   // change events.
   assert('pendingStateChangeCount == 0');
   assert('activeStateChangeCount == 0');
+
+  if (parent.unregisterAfterTest) {
+    test_header('Unregistering the ServiceWorker.');
+    navigator.serviceWorker.unregister('/scope/*').then(function() {
+      pass('Unregistration finished.');
+    }, errorHandler);
+  }
 }
 </script>

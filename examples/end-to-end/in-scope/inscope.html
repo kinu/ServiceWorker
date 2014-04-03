@@ -2,11 +2,7 @@
 <script>
 var phase = location.hash;
 
-var activeChangeCount = 0,
-    activeStateChangeCount = 0,
-    pendingChangeCount = 0,
-    pendingStateChangeCount = 0,
-    lastPendingState = '',
+var lastPendingState = '',
     lastActiveState = '',
     receivedMessageFromPort = '',
     receivedMessage = '';
@@ -18,7 +14,7 @@ if (phase != '#activate') {
 } else {
   assert('navigator.serviceWorker');
   assert('navigator.serviceWorker.active');
-  assert('navigator.serviceWorker.active.state == "activating"');
+  assert('navigator.serviceWorker.active.state == "active"');
 }
 
 navigator.serviceWorker.onpendingchange = function() {
@@ -38,32 +34,37 @@ navigator.serviceWorker.onpendingchange = function() {
         case 'installed':
           assert('lastPendingState == "installing"');
           break;
+        case 'activating':
+          assert('lastPendingState == "installed"');
+          break;
+        case 'active':
+          assert('lastPendingState == "activating"');
+          break;
       }
       lastPendingState = navigator.serviceWorker.pending.state;
-      if (lastPendingState == 'installed')
+      if (lastPendingState == 'active')
         done();
     };
   }
 }
 
 if (navigator.serviceWorker.active) {
-  navigator.serviceWorker.active.onstatechange = function() {
-    assert('navigator.serviceWorker.active.state == "active"');
-    lastActiveState = navigator.serviceWorker.active.state;
-
-    sendMessagePortToServiceWorker(
-      navigator.serviceWorker.active,
-      'inscope doc (via active)',
-      function (e) { receivedMessageFromPort = e.data; });
-
-    done();
-  };
+  sendMessagePortToServiceWorker(
+    navigator.serviceWorker.active,
+    'inscope doc (via active)',
+    function (e) {
+      receivedMessageFromPort = e.data;
+      if (receivedMessage)
+        done();
+    });
 }
 
 function onMessage(e) {
   var message = e.data;
   log('Got message from ServiceWorker: ' + message);
   receivedMessage = e.message;
+  if (receivedMessageFromPort)
+    done();
 }
 
 function onTestFinished() {
@@ -75,18 +76,17 @@ function onTestFinished() {
     // Likewise we'll only see installing and installed statechange.
     assert('pendingChangeCount == 1');
     assert('pendingStateChangeCount == 2');
-    assert('lastPendingState == "installed"');
+    assert('lastPendingState == "active"');
     assert('receivedMessageFromPort == "Ack for: inscope doc (via pending)"');
     assert('receivedMessage == "Ack for: inscope doc (via pending)"');
 
-    test_header('Reloading the doc to trigger the activation');
+    test_header('Reloading the doc to test in-scope with .active');
     document.location.href = document.location + '#activate';
     document.location.reload();
   } else {
     test_header('Activation finished.');
     assert('activeChangeCount == 0');
-    assert('activeStateChangeCount == 1');
-    assert('lastActiveState == "active"');
+    assert('activeStateChangeCount == 0');
     assert('pendingChangeCount == 0');
     assert('pendingStateChangeCount == 0');
     assert('receivedMessageFromPort == "Ack for: inscope doc (via active)"');

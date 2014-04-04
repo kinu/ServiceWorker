@@ -46,6 +46,7 @@ function done() {
   testFinished = true;
   if (window.onTestFinished)
     onTestFinished();
+  log("===== Test finished =====");
 }
 
 function sendMessagePortToServiceWorker(sw, from, handler) {

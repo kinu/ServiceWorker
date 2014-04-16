@@ -56,27 +56,18 @@ function sendMessagePortToServiceWorker(sw, from, handler) {
                  [messageChannel.port2]);
 }
 
-var activeChangeCount = 0,
-    activeStateChangeCount = 0,
-    pendingChangeCount = 0,
-    pendingStateChangeCount = 0;
+var currentChangeCount = 0,
+    currentStateChangeCount = 0;
 
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.onpendingchange = function() {
-    ++pendingChangeCount;
-    setStateChangeCounter(navigator.serviceWorker.pending,
-                          'pendingStateChangeCount');
-  };
-  navigator.serviceWorker.onactivechange = function() {
-    ++activeChangeCount;
+  navigator.serviceWorker.oncurrentchange = function() {
+    ++currentChangeCount;
     setStateChangeCounter(navigator.serviceWorker.active,
-                          'activeStateChangeCount');
+                          'currentStateChangeCount');
   };
 
-  setStateChangeCounter(navigator.serviceWorker.pending,
-                        'pendingStateChangeCount');
-  setStateChangeCounter(navigator.serviceWorker.active,
-                        'activeStateChangeCount');
+  setStateChangeCounter(navigator.serviceWorker.current,
+                        'currentStateChangeCount');
 }
 
 function setStateChangeCounter(sw, counterName) {

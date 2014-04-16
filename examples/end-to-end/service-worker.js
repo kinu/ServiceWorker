@@ -1,30 +1,17 @@
-var port;
-var resolve;
-
 oninstall = function(e) {
-  e.waitUntil(new Promise(function(r) { resolve = r; }));
-}
+  e.waitUntil(new Promise(function(r) { setTimeout(r, 5); }));
+};
 
 onactivate = function(e) {
-  port.postMessage('ping');
-  e.waitUntil(new Promise(function(r) { resolve = r; }));
-}
+  e.waitUntil(new Promise(function(r) { setTimeout(r, 5); }));
+};
 
 self.addEventListener('message', function(e) {
   var message = e.data;
-  if ('port' in message) {
-    if (message.from == 'registering doc')
-      port = message.port;
+  if (typeof message == 'object' && 'port' in message) {
     var response = 'Ack for: ' + message.from;
     try {
       message.port.postMessage(response);
     } catch(e) {}
-    try {
-      message.source.postMessage(response, '*');
-    } catch (e) {}
-  }
-  if (resolve) {
-    resolve();
-    resolve = null;
   }
 });

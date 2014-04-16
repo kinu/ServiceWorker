@@ -3,36 +3,38 @@
 var serviceWorker = null,
     serviceWorkerStateChangeCount = 0,
     lastServiceWorkerState = '',
-    receivedMessageFromPort = '',
-    receivedMessage = '';
+    receivedMessageFromPort = '';
 
 assert('navigator.serviceWorker');
 assert('navigator.serviceWorker.register');
 assert('navigator.serviceWorker.unregister');
 
 // This always tests fresh registration, so unregister it first.
-navigator.serviceWorker.unregister('/scope/*').then(
+navigator.serviceWorker.unregister('/in-scope/*').then(
 function() {
   return navigator.serviceWorker.register(
-    '../service-worker.js', {scope:'/scope/*'});
-}).then(onRegister).catch(errorHandler);
+    '../service-worker.js', {scope:'/in-scope/*'});
+}).then(onRegister, onRegister).catch(errorHandler);
 
 function onRegister(sw) {
   serviceWorker = sw;
   test_header('Registration returned ' + serviceWorker);
-  lastServiceWorkerState = 'installing';
+  lastServiceWorkerState = serviceWorker.state;
 
   sendMessagePortToServiceWorker(
     sw, 'registering doc',
     function (e) {
-      if (e.data == 'ping') sw.postMessage('pong');
-      else receivedMessageFromPort = e.data;
+      receivedMessageFromPort = e.data;
+      if (lastServiceWorkerState == 'active')
+        done();
     });
 
-  assert('serviceWorker.state == "installing"');
   sw.onstatechange = function() {
     ++serviceWorkerStateChangeCount;
     switch (sw.state) {
+      case 'installing':
+        assert('lastServiceWorkerState == "parsed"');
+        break;
       case 'installed':
         assert('lastServiceWorkerState == "installing"');
         break;
@@ -44,26 +46,18 @@ function onRegister(sw) {
         break;
     }
     lastServiceWorkerState = sw.state;
-    if (lastServiceWorkerState == 'active')
+    if (lastServiceWorkerState == 'active' && receivedMessageFromPort)
       done();
   };
 }
-
-window.onmessage = function(e) {
-  log('Got message from ServiceWorker :' + e.data);
-  receivedMessage = e.message;
-};
 
 function onTestFinished() {
   test_header('Registration finished.');
   assert('serviceWorkerStateChangeCount == 3');
   assert('lastServiceWorkerState == "active"');
   assert('receivedMessageFromPort == "Ack for: registering doc"');
-  assert('receivedMessage == "Ack for: registering doc"');
 
-  // This document is out-of-scope, so we should see no pending/active
-  // change events.
-  assert('pendingStateChangeCount == 0');
-  assert('activeStateChangeCount == 0');
+  // This document is out-of-scope, so we should see no current change events.
+  assert('currentStateChangeCount == 0');
 }
 </script>

@@ -11,10 +11,14 @@ assert('navigator.serviceWorker.unregister');
 
 // This always tests fresh registration, so unregister it first.
 navigator.serviceWorker.unregister('/in-scope/*').then(
-function() {
+    register, register).then(
+    onRegister).catch(
+    errorHandler);
+
+function register() {
   return navigator.serviceWorker.register(
     '../service-worker.js', {scope:'/in-scope/*'});
-}).then(onRegister, onRegister).catch(errorHandler);
+}
 
 function onRegister(sw) {
   serviceWorker = sw;
